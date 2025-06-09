@@ -7,7 +7,7 @@ It initializes the GUI, the translation service, and starts the Tkinter event lo
 import tkinter as tk
 import logging # Import the logging module
 
-from gui import Application 
+from gui import Application
 from translation_service import TranslationService
 
 def main():
@@ -35,13 +35,13 @@ def main():
 
     win = tk.Tk()  # Create the main Tkinter window
     app_instance = Application(win)  # Create an instance of the GUI Application
-    
+
     # Create an instance of the TranslationService, passing the GUI instance
-    translator_service = TranslationService(app_instance) 
-    
+    translator_service = TranslationService(app_instance)
+
     # Link the translation service to the GUI application instance
-    app_instance.set_translation_service(translator_service) 
-    
+    app_instance.set_translation_service(translator_service)
+
     logger.info("Application GUI and TranslationService initialized. Starting main loop.")
     win.mainloop()  # Start the Tkinter event loop
 

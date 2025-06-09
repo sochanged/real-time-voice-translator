@@ -33,7 +33,7 @@ class Application:
 
         master.geometry("700x450")
         master.title("LinguaSync: Real-Time Voice🎙️ Translator🔊")
-        
+
         logger.info("Initializing GUI components.")
 
         # Load and set application icon
@@ -49,7 +49,7 @@ class Application:
         self._setup_text_areas()
         self._setup_language_selectors()
         self._setup_buttons()
-        
+
         logger.info("GUI components initialized.")
 
     def _setup_text_areas(self):
@@ -78,7 +78,7 @@ class Application:
         self.input_lang_label.pack()
         self.input_lang_combobox = ttk.Combobox(self.master, values=self.language_names, state="readonly")
         self.input_lang_combobox.bind("<<ComboboxSelected>>", self._update_input_lang_code_event)
-        default_input_name = "English" 
+        default_input_name = "English"
         self.input_lang_combobox.set(default_input_name if default_input_name in self.language_names else "auto")
         self.selected_input_lang_code = language_codes.get(self.input_lang_combobox.get(), "auto")
         logger.info(f"Default input language set to: {self.input_lang_combobox.get()} ({self.selected_input_lang_code})")
@@ -97,7 +97,7 @@ class Application:
         self.selected_output_lang_code = language_codes.get(self.output_lang_combobox.get(), "en")
         logger.info(f"Default output language set to: {self.output_lang_combobox.get()} ({self.selected_output_lang_code})")
         self.output_lang_combobox.pack()
-        
+
         # Blank space for layout
         tk.Label(self.master, text="").pack()
 
@@ -190,7 +190,7 @@ class Application:
         logger.info("'About this project' button clicked.")
         about_window = tk.Toplevel(self.master)
         about_window.title("About LinguaSync")
-        if self.icon: 
+        if self.icon:
             about_window.iconphoto(False, self.icon)
 
         # GitHub link
@@ -203,9 +203,9 @@ class Application:
         about_text_content = """
 LinguaSync: Real-Time Voice Translator
 
-This application translates voice from one language to 
-another in real-time, aiming to preserve the speaker's 
-tone and emotion. It utilizes various Google services for 
+This application translates voice from one language to
+another in real-time, aiming to preserve the speaker's
+tone and emotion. It utilizes various Google services for
 its core translation functionalities.
 
 Select input and output languages, then click 'Start Translation'.
@@ -214,16 +214,16 @@ Say "exit" or "stop" to halt the current translation session.
 """
         about_text_widget = tk.Text(about_window, height=10, width=60, wrap=tk.WORD, relief=tk.FLAT, bg=about_window.cget('bg'))
         about_text_widget.insert("1.0", about_text_content.strip())
-        about_text_widget.config(state=tk.DISABLED) 
+        about_text_widget.config(state=tk.DISABLED)
         about_text_widget.pack(padx=10, pady=5)
 
         # Close button for the About window
         close_button = tk.Button(about_window, text="Close", command=about_window.destroy)
         close_button.pack(pady=(5, 10)) # Added padding
-        
+
         # Modal behavior for the About window
-        about_window.transient(self.master) 
-        about_window.grab_set() 
+        about_window.transient(self.master)
+        about_window.grab_set()
         self.master.wait_window(about_window) # Wait until about_window is closed
         logger.debug("About window closed.")
 
@@ -249,17 +249,17 @@ if __name__ == '__main__':
     logger.info("Running gui.py directly for testing purposes.")
     root = tk.Tk()
     app = Application(root)
-    
+
     # Example: Simulate TranslationService for testing button functionality
     class MockTranslationService:
         def start_translation(self): logger.info("MockService: Start translation called.")
         def stop_translation(self): logger.info("MockService: Stop translation called.")
-    
+
     mock_service = MockTranslationService()
     app.set_translation_service(mock_service)
-    
+
     # Example: Test show_error_message after a delay
     # root.after(2000, lambda: app.show_error_message("This is a test error message from __main__."))
-    
+
     root.mainloop()
     logger.info("gui.py test run finished.")

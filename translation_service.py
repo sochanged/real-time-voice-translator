@@ -67,9 +67,9 @@ class TranslationService:
             input_lang_code = self.app.selected_input_lang_code
             # Use None for language if 'auto' to let Google auto-detect
             language_param = input_lang_code if input_lang_code != "auto" else None
-            
+
             logger.debug(f"Listening for speech via microphone... Language: {language_param or 'auto'}")
-            audio = self.recognizer.listen(source_audio) 
+            audio = self.recognizer.listen(source_audio)
             logger.debug("Processing captured speech...")
             speech_text = self.recognizer.recognize_google(audio, language=language_param)
             logger.info(f"Speech recognized: '{speech_text}'")
@@ -108,7 +108,7 @@ class TranslationService:
                 return transliterated_text, None
             except Exception as e:
                 logger.error(f"Transliteration error for text '{text}' to lang_code '{lang_code}': {e}", exc_info=True)
-                return text, f"Transliteration failed: {type(e).__name__}" 
+                return text, f"Transliteration failed: {type(e).__name__}"
         logger.debug(f"No transliteration needed for lang_code '{lang_code}' or empty text.")
         return text, None
 
@@ -125,10 +125,10 @@ class TranslationService:
             A tuple (translated_text, None) on success,
             or (None, error_message_string) if translation fails.
         """
-        if not text: 
+        if not text:
             logger.warning("No text provided for translation.")
             return None, "No text provided for translation."
-        
+
         logger.debug(f"Attempting translation from '{source_lang}' to '{target_lang}' for text: '{text}'")
         try:
             translated_text = GoogleTranslator(source=source_lang, target=target_lang).translate(text=text)
@@ -137,10 +137,10 @@ class TranslationService:
         except dt_exceptions.TranslationNotFound as e:
             logger.warning(f"Translation not found for text '{text}': {e}", exc_info=False) # Stack trace might be too verbose for this
             return None, f"Translation not found: Query '{text[:20]}...'" # Avoid overly long error messages
-        except dt_exceptions.DeepTranslatorException as e: 
+        except dt_exceptions.DeepTranslatorException as e:
             logger.error(f"Translation API error: {e}", exc_info=True)
             return None, f"Translation API error: {type(e).__name__}"
-        except Exception as e: 
+        except Exception as e:
             logger.error(f"Unexpected error during translation: {e}", exc_info=True)
             return None, f"Unexpected translation error: {type(e).__name__}"
 
@@ -159,7 +159,7 @@ class TranslationService:
         if not text:
             logger.warning("No text provided for audio synthesis.")
             return False, "No text provided for synthesis."
-        
+
         temp_audio_file_path = None
         try:
             # Create a named temporary file for the audio output.
@@ -168,7 +168,7 @@ class TranslationService:
             with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp_file:
                 temp_audio_file_path = tmp_file.name
             logger.debug(f"Created temporary audio file: {temp_audio_file_path}")
-            
+
             # Synthesize speech using gTTS
             logger.debug(f"Synthesizing audio for text: '{text}' in language '{lang_code}'")
             voice = gTTS(text=text, lang=lang_code)
@@ -177,13 +177,13 @@ class TranslationService:
 
             # Play the synthesized audio
             logger.debug(f"Playing audio file: {temp_audio_file_path}")
-            playsound(temp_audio_file_path) 
+            playsound(temp_audio_file_path)
             logger.info("Audio playback finished.")
             return True, None
         except gTTSError as e:
             logger.error(f"gTTS Error during synthesis for text '{text}': {e}", exc_info=True)
             return False, f"Text-to-Speech (gTTS) Error: {e}"
-        except Exception as e: 
+        except Exception as e:
             logger.error(f"Audio synthesis or playback error for text '{text}': {e}", exc_info=True)
             return False, f"Audio synthesis/playback error: {type(e).__name__}"
         finally:
@@ -220,26 +220,26 @@ class TranslationService:
                 # Optional: Adjust for ambient noise dynamically if issues persist,
                 # but could also be done once in __init__.
                 # logger.debug("Adjusting for ambient noise for current listening session...")
-                # self.recognizer.adjust_for_ambient_noise(source, duration=0.2) 
-                
+                # self.recognizer.adjust_for_ambient_noise(source, duration=0.2)
+
                 logger.info("Listening for user speech...")
                 speech_text, error_msg = self._recognize_speech_from_mic(source)
-                
-                if error_msg: 
+
+                if error_msg:
                     logger.warning(f"Speech recognition failed: {error_msg}")
                     self.app.show_error_message(f"Recognition: {error_msg}")
                     # Continue to allow next attempt without manual restart if keep_running is true
                     if self.keep_running: self.app.master.after(100, self._update_translation_loop)
-                    return 
-                
+                    return
+
                 # If speech_text is None but no error_msg (shouldn't happen with current helpers, but safeguard)
-                if not speech_text: 
+                if not speech_text:
                     logger.debug("No speech text recognized, continuing loop.")
                     if self.keep_running: self.app.master.after(100, self._update_translation_loop)
                     return
 
                 # Update GUI with recognized text
-                self.app.input_text.insert(tk.END, f"{speech_text}\n") 
+                self.app.input_text.insert(tk.END, f"{speech_text}\n")
                 self.app.input_text.see(tk.END) # Auto-scroll
 
                 # Check for voice commands to stop translation
@@ -252,36 +252,36 @@ class TranslationService:
                 # Proceed with transliteration and translation pipeline
                 input_lang_code = self.app.selected_input_lang_code
                 output_lang_code = self.app.selected_output_lang_code
-                
+
                 processed_text, error_msg = self._transliterate_if_needed(speech_text, input_lang_code)
-                if error_msg: 
+                if error_msg:
                     logger.warning(f"Transliteration failed: {error_msg}. Using original text for translation.")
                     self.app.show_error_message(f"Transliteration: {error_msg}")
                     # Continue with original text (processed_text holds original if translit failed)
 
                 translated_text, error_msg = self._translate_text_content(processed_text, input_lang_code, output_lang_code)
-                if error_msg: 
+                if error_msg:
                     logger.error(f"Text translation failed: {error_msg}")
                     self.app.show_error_message(f"Translation: {error_msg}")
                     if self.keep_running: self.app.master.after(100, self._update_translation_loop)
-                    return 
-                
+                    return
+
                 if not translated_text: # Safeguard if translation returns None without specific error_msg
                     logger.warning("Translation resulted in empty text, not proceeding with audio.")
                     self.app.show_error_message("Translation resulted in empty text.")
                     if self.keep_running: self.app.master.after(100, self._update_translation_loop)
                     return
-                
+
                 # Update GUI with translated text
                 self.app.output_text.insert(tk.END, translated_text + "\n")
                 self.app.output_text.see(tk.END) # Auto-scroll
 
                 # Synthesize and play audio
                 _played_successfully, error_msg = self._synthesize_and_play_audio(translated_text, output_lang_code)
-                if error_msg: 
+                if error_msg:
                     logger.error(f"Audio synthesis or playback failed: {error_msg}")
                     self.app.show_error_message(f"Audio: {error_msg}")
-        
+
         except sr.RequestError as e: # Specific error if microphone/speech API is initially unavailable
             logger.critical(f"Microphone or Speech API is unavailable: {e}", exc_info=True)
             self.app.show_error_message(f"Mic/Speech API unavailable: {e}")
@@ -304,12 +304,12 @@ class TranslationService:
         if not self.keep_running:
             self.keep_running = True
             logger.info("Translation process started by user.")
-            
+
             # Optionally clear previous text in GUI when starting a new session
             # self.app.input_text.delete('1.0', tk.END)
             # self.app.output_text.delete('1.0', tk.END)
             # logger.debug("Cleared input/output text areas on start.")
-            
+
             # Ensure only one update thread is running
             if self.update_thread is None or not self.update_thread.is_alive():
                 logger.debug("Creating and starting new translation thread.")
